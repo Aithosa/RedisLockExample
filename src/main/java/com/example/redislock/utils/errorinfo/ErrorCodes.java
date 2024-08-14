@@ -12,59 +12,61 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * 错误码信息
+ * Error Code Information
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public abstract class ErrorCodes {
-    @Notes("操作成功")
+
+    @Notes("Operation Successful")
     public static final String SUCCESS = "0";
 
-    @Notes("未知错误")
+    @Notes("Unknown Error")
     public static final String FAIL = "-1";
 
     private static final Map<String, String> ERRORS = new HashMap<>();
 
     /**
-     * 设置错误描述
+     * Sets the error description for a given error code.
      *
-     * @param code  错误码
-     * @param value 描述
-     * @return 旧的描述
+     * @param code  Error code
+     * @param value Description
+     * @return The old description
      */
     public static synchronized String setErrorDesc(String code, String value) {
         return ERRORS.put(code, value);
     }
 
     /**
-     * 获取错误描述
+     * Retrieves the error description for a given error code.
      *
-     * @param code 错误码
-     * @return 描述
+     * @param code Error code
+     * @return Description
      */
     public static String getErrorDesc(String code) {
         return ERRORS.get(code);
     }
 
     /**
-     * 获取错误描述
+     * Retrieves the error description for a given error code, or returns
+     * a default description if the code is not found.
      *
-     * @param code 错误码
-     * @param def  默认描述
-     * @return 描述
+     * @param code Error code
+     * @param def  Default description
+     * @return Description
      */
     public static String getErrorDesc(String code, String def) {
         return ERRORS.getOrDefault(code, def);
     }
 
     /**
-     * 初始化
+     * Initializes error descriptions.
      *
-     * @param clazz  错误码继承类
-     * @param prefix 错误码前缀
+     * @param clazz  The class containing error codes
+     * @param prefix The prefix to use for error codes
      */
     public static void initDesc(Class<?> clazz, String prefix) {
-        // 处理应用类定义的常量，不允许继承关系，必须是public static final
+        // Process constants defined in the application class: must be public static final
         for (Field fd : clazz.getDeclaredFields()) {
             Optional<String> desc = getFieldDesc(fd);
             desc.ifPresent(s -> resolveDesc(fd, s));
@@ -79,15 +81,17 @@ public abstract class ErrorCodes {
                 ERRORS.put(code, desc);
             }
         } catch (IllegalAccessException e) {
-            log.error("load error description fail", e);
+            log.error("Failed to load error description", e);
         }
     }
 
     private static Optional<String> getFieldDesc(Field fd) {
         int mf = fd.getModifiers();
-        if (Modifier.isPublic(mf) && Modifier.isStatic(mf) && Modifier.isFinal(mf) && fd.getType() == String.class) {
+        if (Modifier.isPublic(mf) && Modifier.isStatic(mf) &&
+                Modifier.isFinal(mf) && fd.getType() == String.class) {
             Notes nt = fd.getAnnotation(Notes.class);
-            return nt == null || StringUtils.isEmpty(nt.value()) ? Optional.empty() : Optional.of(nt.value());
+            return nt == null || StringUtils.isEmpty(nt.value()) ?
+                    Optional.empty() : Optional.of(nt.value());
         }
         return Optional.empty();
     }
@@ -113,7 +117,7 @@ public abstract class ErrorCodes {
                 }
             }
         } catch (IllegalAccessException | NoSuchFieldException e) {
-            log.error("load error code fail", e);
+            log.error("Failed to load error codes", e);
         }
     }
 }

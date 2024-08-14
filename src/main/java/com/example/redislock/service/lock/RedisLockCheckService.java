@@ -1,6 +1,5 @@
 package com.example.redislock.service.lock;
 
-
 import com.example.redislock.api.lock.ILockable;
 import com.example.redislock.api.lock.LockKey;
 import com.example.redislock.api.base.Response;
@@ -18,80 +17,76 @@ import java.lang.reflect.Parameter;
 import java.time.Duration;
 
 /**
- * 业务类型加锁校验
+ * Business type lock validation service
  */
 @Service
 @Slf4j
 public class RedisLockCheckService {
     /**
-     * 超时时间
+     * Timeout duration
      */
     public static final int TIME_OUT = 10 * 1000;
 
     /**
-     * 锁前缀
+     * Lock prefix
      */
     private static final String LOCK_PREFIX = "order:lock:";
 
     /**
-     * 加锁结果枚举
+     * Lock result enumeration
      */
     private enum LockResult {
         /**
-         * 加锁成功
+         * Lock acquired successfully
          */
         SUCCESS,
-
         /**
-         * 加锁失败
+         * Failed to acquire lock
          */
         FAIL,
-
         /**
-         * 不需要加锁
+         * No need to acquire lock
          */
         NO_NEED
     }
 
     /**
-     * Redis锁，此处用的最简单的版本
+     * Redis lock, using the simplest version here
      */
     private final RedisLock lock;
 
     /**
-     * Spring加载Bean时会执行此构造函数
+     * Constructor executed when Spring loads the Bean
      */
     public RedisLockCheckService(StringRedisTemplate strRedis) {
         lock = new RedisLock(Utils.uuidBase64(), strRedis);
     }
 
     /**
-     * 业务流程加锁和解锁
+     * Business process lock and unlock
      */
     public Object doLock(ProceedingJoinPoint joinPoint) throws Throwable {
         LockResult lockResult = LockResult.NO_NEED;
-
-        // 判断是否需要加锁，如果需要应返回锁的key
+        // Determine if locking is needed, if needed the key should be returned
         LockKey key = getLockKey(joinPoint);
-        if (null != key) {
-            // 加锁失败的直接抛错，不再进行解锁
+        if (key != null) {
+            // Failure during lock acquisition will throw an exception, no unlocking will be performed
             boolean result = lock.lock(key.getKey(), Duration.ofMillis(key.getTimeout()));
             lockResult = result ? LockResult.SUCCESS : LockResult.FAIL;
             if (LockResult.FAIL.equals(lockResult)) {
-                // NOTE:这里的失败是包括了加锁过程本身的错误，以及该锁已经存在导致无法继续加锁，这个报错是否准确
-                log.info("redis order-lock, key is: {}, the result is {}", key.getKey(), result);
-                return Response.fail("ResultCode.DUPLICATE_MESSAGE", "该消息已经在处理中！");
+                // NOTE: This failure includes errors during the lock process itself and the inability to acquire lock due to its existence. Is this error accurate?
+                log.info("Redis order-lock, key is: {}, the result is {}", key.getKey(), result);
+                return Response.fail("ResultCode.DUPLICATE_MESSAGE", "This message is already being processed!");
             }
         }
 
         Object result;
         try {
-            // 执行原始逻辑
+            // Execute the original logic
             result = joinPoint.proceed();
-        }
-        //无论业务执行成功和失败，都要解锁
-        finally {
-            // 解锁(只有加锁成功之后才需要解锁)
+        } finally {
+            // Unlock regardless of business execution success or failure
+            // Unlock (only needed if lock was acquired successfully)
             if (LockResult.SUCCESS.equals(lockResult)) {
                 unlock(key.getKey());
             }
@@ -103,41 +98,37 @@ public class RedisLockCheckService {
     private void unlock(String lockKey) {
         boolean unlockResult = lock.unlock(lockKey);
         if (!unlockResult) {
-            log.info("redis order-unlock, key is: {}, the result is {}", lockKey, unlockResult);
-            log.error("fail to unlock, please wait 10 seconds.  ");
+            log.info("Redis order-unlock, key is: {}, the result is {}", lockKey, unlockResult);
+            log.error("Fail to unlock, please wait 10 seconds.");
         }
     }
 
     /**
-     * 判断是否需要加锁，需要的话获取锁的Key值
+     * Determine if locking is needed and get the lock key if needed
      */
     private LockKey getLockKey(ProceedingJoinPoint joinPoint) {
         Object[] args = joinPoint.getArgs();
-        if (null == args || args.length <= 0) {
+        if (args == null || args.length <= 0) {
             return null;
         }
-
-        // 获取方法参数
+        // Get method parameters
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Parameter[] parameters = signature.getMethod().getParameters();
-        if (null == parameters || parameters.length <= 0) {
+        if (parameters == null || parameters.length <= 0) {
             return null;
         }
-
-        // 默认只有一个参数
+        // Default to only one parameter
         Object request = args[0];
         if (request == null) {
             return null;
         }
-
-        // 有加锁注解才处理
+        // Process only if the parameter has the RedisLockCheck annotation
         Parameter parameter = parameters[0];
         RedisLockCheck lockCheck = parameter.getAnnotation(RedisLockCheck.class);
         if (lockCheck == null) {
             return null;
         }
-
-        // 实现了key值接口的才处理(实现接口只是基本条件，还需要加注解才会加锁)
+        // Process only if the parameter implements the ILockable interface (implementing the interface is the basic condition, additionally it needs the annotation to lock)
         if (!(request instanceof ILockable lockable)) {
             return null;
         }

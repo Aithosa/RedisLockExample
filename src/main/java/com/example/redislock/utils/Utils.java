@@ -7,12 +7,16 @@ import java.nio.ByteBuffer;
 import java.util.Base64;
 import java.util.UUID;
 
+/**
+ * Utility class containing methods for common operations.
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Utils {
+
     /**
-     * 生成UUID并转换为Base64格式
+     * Generates a UUID and converts it to Base64 format.
      *
-     * @return 生成的id
+     * @return the generated id in Base64 format
      */
     public static String uuidBase64() {
         UUID uuid = UUID.randomUUID();

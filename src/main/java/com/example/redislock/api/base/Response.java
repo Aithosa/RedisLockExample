@@ -1,6 +1,5 @@
 package com.example.redislock.api.base;
 
-
 import com.example.redislock.utils.errorinfo.ErrorCodes;
 import com.example.redislock.utils.exception.BizError;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -11,39 +10,76 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-
 import java.text.MessageFormat;
 
-@ApiModel(description = "响应消息")
+/**
+ * Response<T> class represents a standardized response format for API responses.
+ *
+ * @param <T> the type of the data included in the response
+ */
+@ApiModel(description = "Response message")
 @Data
 @Slf4j
 public class Response<T> {
-    @ApiModelProperty(value = "错误码，0表示操作成功", required = true, example = "0")
+    /**
+     * Result code, where 0 indicates successful operation.
+     */
+    @ApiModelProperty(value = "Result code, 0 indicates success", required = true, example = "0")
     protected String resultCode = "0";
 
-    @ApiModelProperty(value = "错误描述", required = true, example = "操作成功")
-    protected String description = "操作成功";
+    /**
+     * Description of the result.
+     */
+    @ApiModelProperty(value = "Description of the result", required = true, example = "Operation successful")
+    protected String description = "Operation successful";
 
-    @ApiModelProperty(value = "响应数据", notes = "没有具体类型的可以忽略")
+    /**
+     * Response data.
+     */
+    @ApiModelProperty(value = "Response data", notes = "Can be ignored if there is no specific type")
     protected T data;
 
-    @ApiModelProperty(value = "错误参数", hidden = true)
+    /**
+     * Error parameters.
+     */
+    @ApiModelProperty(value = "Error parameters", hidden = true)
     @JsonIgnore
     protected Object[] args;
 
+    /**
+     * Default constructor.
+     */
     public Response() {
     }
 
+    /**
+     * Constructor with response data.
+     *
+     * @param data the response data
+     */
     public Response(T data) {
         this.data = data;
     }
 
+    /**
+     * Constructor with resultCode and description.
+     *
+     * @param resultCode the result code
+     * @param msg        the description
+     */
     @JsonCreator
     public Response(@JsonProperty("resultCode") String resultCode, @JsonProperty("description") String msg) {
         this.resultCode = resultCode;
         this.description = msg;
     }
 
+    /**
+     * Constructor with resultCode, description, and data.
+     *
+     * @param resultCode the result code
+     * @param desc       the description
+     * @param data       the response data
+     */
     public Response(String resultCode, String desc, T data) {
         this.resultCode = resultCode;
         this.description = desc;
@@ -51,10 +87,10 @@ public class Response<T> {
     }
 
     /**
-     * 绑定参数
+     * Binds additional parameters to the error description.
      *
-     * @param args 参数
-     * @return 自身
+     * @param args additional parameters
+     * @return the instance of Response<T>
      */
     public Response<T> withArgs(Object... args) {
         this.args = args;
@@ -69,100 +105,101 @@ public class Response<T> {
     }
 
     /**
-     * 构造成功响应
+     * Creates a successful response.
      *
-     * @param data 内容
-     * @param <T>  类型
-     * @return 响应
+     * @param data the response data
+     * @param <T>  the type of the response data
+     * @return a successful Response instance
      */
     public static <T> Response<T> success(T data) {
         return new Response<>(data);
     }
 
     /**
-     * 构造成功响应
+     * Creates a successful response.
      *
-     * @param <T> 类型
-     * @return 响应
+     * @param <T> the type of the response data
+     * @return a successful Response instance
      */
     public static <T> Response<T> success() {
         return new Response<>();
     }
 
     /**
-     * 失败响应
+     * Creates a failed response.
      *
-     * @param code 错误码
-     * @param <T>  类型
-     * @return 响应
+     * @param code the error code
+     * @param <T>  the type of the response data
+     * @return a failed Response instance
      */
     public static <T> Response<T> fail(String code) {
         return fail(code, ErrorCodes.getErrorDesc(code));
     }
 
     /**
-     * 失败响应，带数据
+     * Creates a failed response with data.
      *
-     * @param code 错误码
-     * @param data 类型
-     * @param <T>  错误码描述
-     * @return 响应
+     * @param code the error code
+     * @param data the response data
+     * @param <T>  the type of the response data
+     * @return a failed Response instance
      */
     public static <T> Response<T> fail(String code, T data) {
         return fail(code, ErrorCodes.getErrorDesc(code), data);
     }
 
     /**
-     * 失败响应，带数据
+     * Creates a failed response.
      *
-     * @param code 错误码
-     * @param <T>  错误码描述
-     * @return 响应
+     * @param code the error code
+     * @param msg  the error message
+     * @param <T>  the type of the response data
+     * @return a failed Response instance
      */
     public static <T> Response<T> fail(String code, String msg) {
         return new Response<>(code, msg);
     }
 
     /**
-     * 失败响应，带数据
+     * Creates a failed response with data.
      *
-     * @param code 错误码
-     * @param msg  错误码描述
-     * @param data 类型
-     * @param <T>  错误码描述
-     * @return 响应
+     * @param code the error code
+     * @param msg  the error message
+     * @param data the response data
+     * @param <T>  the type of the response data
+     * @return a failed Response instance
      */
     public static <T> Response<T> fail(String code, String msg, T data) {
         return new Response<>(code, msg, data);
     }
 
     /**
-     * 判断是否成功
+     * Checks if the response is successful.
      *
-     * @return 标识成功
+     * @return true if the resultCode indicates success, false otherwise
      */
     public boolean isSuccess() {
         return ErrorCodes.SUCCESS.equals(resultCode);
     }
 
     /**
-     * 检查是否成功，失败则抛出异常
+     * Checks if the response is successful, throws an exception if it is not.
      *
-     * @param action  日志记录内容
-     * @param rt      响应消息
-     * @param optCode 异常错误吗
+     * @param action  the action description for logging
+     * @param rt      the response to check
+     * @param optCode the error code to use if the response is not successful
      */
     public static void check(String action, Response<?> rt, String optCode) {
         check(action, rt, optCode, ErrorCodes.getErrorDesc(optCode));
     }
 
     /**
-     * 检查响应， 失败抛出异常
+     * Checks the response, throws an exception if it is not successful.
      *
-     * @param action  日志记录内容
-     * @param rt      响应消息
-     * @param optCode 异常错误吗
-     * @param optDes  错误描述
+     * @param action  the action description for logging
+     * @param rt      the response to check
+     * @param optCode the error code to use if the response is not successful
+     * @param optDes  the error description to use if the response is not successful
      */
     public static void check(String action, Response<?> rt, String optCode, String optDes) {
         if (rt == null) {

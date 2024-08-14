@@ -11,15 +11,17 @@ public class SyncService {
     @RedisLock(key = "sync-order")
     @Async
     public void sync() {
-        // 处理同步逻辑
+        // Handle synchronization logic
         log.info("Sync process started");
-        // 模拟长时间任务
+
+        // Simulate a long-running task
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("Sync process interrupted", e);
         }
+
         log.info("Sync process completed");
     }
 }

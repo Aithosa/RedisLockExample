@@ -1,6 +1,5 @@
 package com.example.redislock.utils;
 
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.RedisScriptingCommands;
 import org.springframework.data.redis.connection.RedisStringCommands;
@@ -13,21 +12,22 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 /**
- * 使用Redis实现分布式锁
+ * Implement distributed locking using Redis
  */
 @Slf4j
 public class RedisLock {
     /**
-     * 解锁脚本
+     * Unlock script
      */
     private static final String UNLOCK_LUA = "if redis.call(\"get\", KEYS[1]) == ARGV[1] then return redis.call(\"del\", KEYS[1]) else return 0 end";
+
     /**
-     * 更新超时时间
+     * Update expiration time
      */
     private static final String EXPIRE_LUA = "if redis.call(\"get\", KEYS[1]) == ARGV[1] then return redis.call(\"expire\", KEYS[1], ARGV[2]) else return 0 end";
 
     /**
-     * 当前节点
+     * Current node
      */
     private final String nodeId;
 
@@ -39,14 +39,14 @@ public class RedisLock {
     }
 
     /**
-     * 加锁
-     * Redis存储：
-     *  - Key为请求参数传入的业务自定义值
-     *  - Value为当前节点Id（创建LockService时生成的随机值）
+     * Acquire lock
+     * <p> Redis storage:
+     * <p>  - Key is a custom value passed in by the request parameters
+     * <p>  - Value is the current node Id (randomly generated when creating LockService)
      *
-     * @param key    键值
-     * @param expire 过期时间
-     * @return 是否锁定
+     * @param key    The key
+     * @param expire Expiration time
+     * @return Whether the lock is acquired
      */
     public boolean lock(String key, Duration expire) {
         try {
@@ -59,19 +59,19 @@ public class RedisLock {
             });
             return result == null ? false : result;
         } catch (Exception e) {
-            log.error("set redis occurred an exception.", e);
+            log.error("Exception occurred while setting redis.", e);
         }
 
         return false;
     }
 
     /**
-     * 解锁
-     * 解锁时判断锁Key对应的Value是否为RedisLock初始化时传入的节点Id（创建LockService时生成的随机值）
-     * 确保只有锁的持有者才能解锁
+     * Release lock
+     * <p> When releasing the lock, check if the Value corresponding to the lock Key is the node Id passed in during RedisLock initialization (randomly generated when creating LockService).
+     * <p> Ensure that only the lock holder can release the lock.
      *
-     * @param key 键值
-     * @return 是否成功
+     * @param key The key
+     * @return Whether the lock was released successfully
      */
     public boolean unlock(String key) {
         try {
@@ -84,18 +84,18 @@ public class RedisLock {
             });
             return result != null && result > 0;
         } catch (Exception e) {
-            log.error("release lock occurred an exception.", e);
+            log.error("Exception occurred while releasing lock.", e);
         }
 
         return false;
     }
 
     /**
-     * 刷新锁过期时间
+     * Refresh lock expiration time
      *
-     * @param key    键值
-     * @param expire 新设置的过期时间
-     * @return 是否成功
+     * @param key    The key
+     * @param expire New expiration time
+     * @return Whether the expiration time was refreshed successfully
      */
     public boolean refreshLockExpire(String key, Duration expire) {
         try {
@@ -110,7 +110,7 @@ public class RedisLock {
 
             return result != null && result > 0;
         } catch (Exception e) {
-            log.error("release lock occurred an exception.", e);
+            log.error("Exception occurred while refreshing lock expiration.", e);
         }
 
         return false;

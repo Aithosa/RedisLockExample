@@ -13,13 +13,26 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Aspect for Redis-based locking.
+ * <p> Ensures that methods annotated with {@link RedisLock} are executed with a lock to prevent concurrent access.
+ */
 @Order(99)
 @Aspect
 @Component
 public class RedisLockAspect {
+
     @Autowired
     private LockService lockService;
 
+    /**
+     * Around advice that applies Redis lock to methods annotated with {@link RedisLock}.
+     * If the lock cannot be acquired, a {@link BizError} is thrown.
+     *
+     * @param joinPoint the join point representing the annotated method
+     * @return the result of the method execution
+     * @throws Throwable if an error occurs during method execution
+     */
     @Around("@annotation(RedisLock)")
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
@@ -41,4 +54,3 @@ public class RedisLockAspect {
         }
     }
 }
-

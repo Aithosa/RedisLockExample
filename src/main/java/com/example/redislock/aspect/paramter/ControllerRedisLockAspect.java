@@ -11,7 +11,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * 切面，加锁处理
+ * Aspect to handle locking
  */
 @Aspect
 @Component
@@ -24,10 +24,15 @@ public class ControllerRedisLockAspect {
 
     @Pointcut("execution(* com.example.redislock.*.controller.*Controller.*(..))")
     public void controllerCheckPointcut() {
+        // Pointcut for controller methods
     }
 
     /**
-     * 业务流程加锁和解锁
+     * Locks and unlocks business process
+     *
+     * @param joinPoint the join point representing the method being intercepted
+     * @return the result of the intercepted method
+     * @throws Throwable if an error occurs during method execution
      */
     @Around("controllerCheckPointcut()")
     public Object doLock(ProceedingJoinPoint joinPoint) throws Throwable {

@@ -5,14 +5,29 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * This class represents the request to submit an order.
+ */
 public class SubmitOrderReq implements ILockable {
-    @ApiModelProperty("修改订单Id")
+
+    /**
+     * The ID of the order to be modified.
+     */
+    @ApiModelProperty("The ID of the order to be modified.")
     @NotBlank
     private String orderId;
 
-    @ApiModelProperty("订单备注")
+    /**
+     * Remark for the order.
+     */
+    @ApiModelProperty("Remark for the order.")
     private String remark;
 
+    /**
+     * Gets the lock key which is the order ID.
+     *
+     * @return the order ID as the lock key.
+     */
     @Override
     @JsonIgnore
     public String getLockKey() {

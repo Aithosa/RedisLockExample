@@ -9,35 +9,35 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 
 /**
- * 并发Redis锁
+ * Concurrent Redis Lock Service
  */
 @Slf4j
 @Service
 public class LockService {
     private static final int LOCK_TIMEOUT = 600;
-
     public static final String LOCK_PREFIX = "lock:";
-
     private final RedisLock redisLock;
 
     /**
-     * Spring加载Bean时会执行此构造函数
+     * This constructor is executed when the Spring bean is loaded.
+     *
+     * @param redisTemplate the Redis template
      */
     public LockService(StringRedisTemplate redisTemplate) {
         redisLock = new RedisLock(Utils.uuidBase64(), redisTemplate);
     }
 
     /**
-     * 根据key加锁-简单场景
+     * Lock by key - Simple scenario
      *
-     * @param key lock key
-     * @param maxTimeout max lock timeout
-     * @return lock result
+     * @param key       the lock key
+     * @param maxTimeout the maximum lock timeout
+     * @return the result of the lock operation
      */
     public boolean lock(String key, int maxTimeout) {
         log.info("Lock with key {}, maxTimeout {}", key, maxTimeout);
 
-        // 不限定时为10分钟
+        // If no limit is set, default to 10 minutes
         if (maxTimeout <= 0) {
             maxTimeout = LOCK_TIMEOUT;
         }
@@ -54,10 +54,10 @@ public class LockService {
     }
 
     /**
-     * 根据key解锁-简单场景
+     * Unlock by key - Simple scenario
      *
-     * @param key lock key
-     * @return unlock result
+     * @param key the lock key
+     * @return the result of the unlock operation
      */
     public boolean unlock(String key) {
         log.info("Unlock key {}...", key);
